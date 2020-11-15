@@ -212,36 +212,37 @@ def alert_filter__ml(alert, ml_models: dict = None) -> dict:
 
     scores = dict()
 
-    try:
-        tic = time.time()
-        ztf_alert = ZTFAlert(alert)
-        toc = time.time()
-        log(f"ZTFAlert(alert) took {toc - tic} s")
-        tic = time.time()
-        features = np.expand_dims(ztf_alert.data["features"], axis=[0, -1])
-        triplet = np.expand_dims(ztf_alert.data["triplet"], axis=[0])
-        toc = time.time()
-        log(f"prepping features took {toc - tic} s")
-
-        # braai
-        if "braai" in ml_models.keys():
+    if ml_models is not None and len(ml_models) > 0:
+        try:
             tic = time.time()
-            braai = ml_models['braai']['model'].predict(x=triplet)[0]
-            scores['braai'] = float(braai)
-            scores['braai_version'] = ml_models['braai']['version']
+            ztf_alert = ZTFAlert(alert)
             toc = time.time()
-            log(f"braai took {toc - tic} s")
-        # acai
-        for model_name in ("acai_h", "acai_v", "acai_o", "acai_n", "acai_b"):
-            if model_name in ml_models.keys():
+            log(f"ZTFAlert(alert) took {toc - tic} s")
+            tic = time.time()
+            features = np.expand_dims(ztf_alert.data["features"], axis=[0, -1])
+            triplet = np.expand_dims(ztf_alert.data["triplet"], axis=[0])
+            toc = time.time()
+            log(f"prepping features took {toc - tic} s")
+
+            # braai
+            if "braai" in ml_models.keys():
                 tic = time.time()
-                score = ml_models[model_name]['model'].predict([features, triplet])[0]
-                scores[model_name] = float(score)
-                scores[f'{model_name}_version'] = ml_models[model_name]['version']
+                braai = ml_models['braai']['model'].predict(x=triplet)[0]
+                scores['braai'] = float(braai)
+                scores['braai_version'] = ml_models['braai']['version']
                 toc = time.time()
-                log(f"{model_name} took {toc - tic} s")
-    except Exception as e:
-        print(time_stamp(), str(e))
+                log(f"braai took {toc - tic} s")
+            # acai
+            for model_name in ("acai_h", "acai_v", "acai_o", "acai_n", "acai_b"):
+                if model_name in ml_models.keys():
+                    tic = time.time()
+                    score = ml_models[model_name]['model'].predict([features, triplet])[0]
+                    scores[model_name] = float(score)
+                    scores[f'{model_name}_version'] = ml_models[model_name]['version']
+                    toc = time.time()
+                    log(f"{model_name} took {toc - tic} s")
+        except Exception as e:
+            print(time_stamp(), str(e))
 
     return scores
 
